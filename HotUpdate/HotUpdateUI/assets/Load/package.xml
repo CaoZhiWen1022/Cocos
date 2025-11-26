@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="ia93ovyo">
+  <resources>
+    <component id="praz0" name="LoadPanel.xml" path="/" exported="true"/>
+    <image id="6pav3" name="dglogo.png" path="/"/>
+    <image id="6pav4" name="logo.png" path="/"/>
+    <component id="6pav5" name="HotUpdatePanel.xml" path="/" exported="true"/>
+    <image id="6pav6" name="n3.png" path="/"/>
+    <component id="6pav7" name="bar.xml" path="/"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

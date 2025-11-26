@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1334">
+  <displayList>
+    <graph id="n0_6pav" name="n0" xy="29,423" size="691,550" type="rect"/>
+    <text id="n1_6pav" name="n1" xy="244,460" size="262,79" fontSize="46" align="center" vAlign="middle" autoSize="none" text="热更新"/>
+    <text id="n2_6pav" name="n2" xy="125,655" size="500,128" fontSize="40" align="center" autoSize="none" text="检测到热更新，正在更新，完成后自动重启"/>
+    <component id="n4_6pav" name="bar" src="6pav7" fileName="bar.xml" xy="69,907">
+      <ProgressBar value="86" max="100"/>
+    </component>
+  </displayList>
+</component>

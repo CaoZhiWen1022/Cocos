@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1334">
+  <displayList>
+    <graph id="n0_u16m" name="n0" xy="0,0" size="750,1334" type="rect">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+    <image id="n2_6pav" name="n2" src="6pav3" fileName="dglogo.png" xy="132,530" size="484,272" aspect="true">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </image>
+    <image id="n3_6pav" name="n3" src="6pav4" fileName="logo.png" xy="197,592" visible="false"/>
+  </displayList>
+</component>

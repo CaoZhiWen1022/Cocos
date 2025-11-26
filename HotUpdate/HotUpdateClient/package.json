@@ -1,0 +1,11 @@
+{
+  "name": "HotUpdateClinet",
+  "uuid": "ef1ae63d-c8e5-45dd-8600-77748317dbac",
+  "creator": {
+    "version": "3.8.2"
+  },
+  "devDependencies": {
+    "chokidar": "^4.0.3",
+    "fairygui-cc": "latest"
+  }
+}

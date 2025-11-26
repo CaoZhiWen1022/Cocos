@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="600,20" extention="ProgressBar">
+  <displayList>
+    <image id="n4_6pav" name="n4" src="6pav6" fileName="n3.png" xy="0,0" size="600,20" color="#333333"/>
+    <image id="n5_6pav" name="bar" src="6pav6" fileName="n3.png" xy="2,2" size="596,16" color="#00ff00"/>
+  </displayList>
+  <ProgressBar/>
+</component>
