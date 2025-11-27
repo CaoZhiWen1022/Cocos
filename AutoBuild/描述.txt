@@ -1,0 +1,6 @@
+cocos 自动化编译，用于修改代码保存后即时刷新浏览器
+基础思路
+使用chokidar对工程目录进行监听，检测到工程文件变化后调用
+2.0 exec("curl http://localhost:7456/update-db");
+3.0 exec("curl http://localhost:7456/asset-db/refresh");
+对工程进行编译，并刷新浏览器
