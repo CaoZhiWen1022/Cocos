@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游戏配置转换工具 · 启动窗口</title>
+  <link rel="stylesheet" href="launcher.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">游戏配置转换工具 <span class="version-tag">v1.0.0</span></h1>
+      <p class="subtitle">请选择一个历史工程或创建新工程开始工作</p>
+    </header>
+
+    <main class="main-content">
+      <div class="action-section">
+        <button id="createProjectBtn" class="btn btn-primary">
+          <span class="btn-icon">+</span>
+          <span class="btn-text">创建新工程</span>
+        </button>
+      </div>
+
+      <section class="history-section">
+        <h2 class="section-title">历史工程</h2>
+        <div id="projectsList" class="projects-list">
+          <div class="loading">加载中...</div>
+        </div>
+      </section>
+    </main>
+    <div class="author-info">作者：caozhiwen</div>
+  </div>
+  <script src="launcher.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工程工作区</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+  <div class="workspace">
+    <header class="workspace-header">
+      <div>
+        <p class="workspace-label">当前工程</p>
+        <h1 id="projectName">未选择工程</h1>
+      </div>
+      <div class="header-actions">
+        <div class="actions-group">
+          <button class="btn btn-outline" id="validateBtn">校验</button>
+          <button class="btn btn-outline" id="refreshBtn">刷新</button>
+          <button class="btn btn-outline" id="exportBtn">导出</button>
+        </div>
+        <button id="backBtn" class="btn btn-ghost">返回启动器</button>
+      </div>
+    </header>
+
+    <section class="project-info">
+      <div class="info-card">
+        <h2>基础信息</h2>
+        <div class="info-grid">
+          <div>
+            <p class="info-label">配置目录</p>
+            <p id="configDir" class="info-value placeholder">--</p>
+          </div>
+          <div>
+            <p class="info-label">标注目录</p>
+            <p id="annotationDir" class="info-value placeholder">--</p>
+          </div>
+          <div>
+            <p class="info-label">导出 JSON 目录</p>
+            <p id="jsonDir" class="info-value placeholder">--</p>
+          </div>
+          <div>
+            <p class="info-label">脚本目录</p>
+            <p id="scriptDir" class="info-value placeholder">--</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace-body">
+      <div class="workspace-grid">
+        <aside class="panel config-panel">
+          <div class="panel-header">
+            <div>
+              <h3>配置文件概览</h3>
+              <p class="panel-subtitle">读取配置目录下的 XLSX 及内部页签</p>
+            </div>
+            <span class="panel-badge" id="configDirBadge">未设置</span>
+          </div>
+          <div class="tree-view" id="configTree">
+            <div class="tree-empty">尚未加载工程</div>
+          </div>
+        </aside>
+
+        <section class="panel detail-panel">
+          <div id="tableDetailView" class="detail-view">
+            <div class="detail-header">
+              <div>
+                <h3>表信息标注</h3>
+                <p id="tableDetailSubtitle" class="panel-subtitle">请选择左侧页签进行标注</p>
+              </div>
+              <div class="detail-actions">
+                <button id="openFieldBtn" class="btn btn-outline" disabled>打开字段标注</button>
+                <button id="saveTableBtn" class="btn btn-primary" disabled>保存</button>
+              </div>
+            </div>
+            <div id="tableEmptyState" class="detail-empty">请选择左侧页签以编辑表标注</div>
+            <div id="tableForm" class="detail-form hidden">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="tableNameInput">表名（英文）</label>
+                  <input type="text" id="tableNameInput" class="form-input" placeholder="请输入表英文名">
+                </div>
+                <div class="form-group">
+                  <label>表类型</label>
+                  <div class="radio-group" id="tableTypeGroup">
+                    <label class="radio-option">
+                      <input type="radio" name="tableType" value="constant">
+                      <span>常数表</span>
+                    </label>
+                    <label class="radio-option">
+                      <input type="radio" name="tableType" value="list">
+                      <span>列表表</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div id="tableStatus" class="detail-status"></div>
+            </div>
+          </div>
+
+          <div id="fieldDetailView" class="detail-view hidden">
+            <div class="detail-header">
+              <div>
+                <h3>字段属性标注</h3>
+                <p id="fieldDetailSubtitle" class="panel-subtitle">请选择表类型后打开字段标注</p>
+              </div>
+              <div class="detail-actions">
+                <button id="fieldBackBtn" class="btn btn-ghost">返回表信息</button>
+                <button id="saveFieldBtn" class="btn btn-primary">保存字段标注</button>
+              </div>
+            </div>
+            <div id="fieldList" class="field-list">
+              <div class="detail-empty">暂未加载字段</div>
+            </div>
+            <div id="fieldStatus" class="detail-status"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script src="workspace.js"></script>
+</body>
+</html>
+

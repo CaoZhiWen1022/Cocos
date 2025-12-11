@@ -1,0 +1,84 @@
+{
+  "name": "xlsx-to-json-converter",
+  "version": "1.0.0",
+  "description": "A tool for converting XLSX files to JSON for game development",
+  "main": "src/main/main.js",
+  "bin": {
+    "export-config": "./export-config.js"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "dist": "electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "electron",
+    "xlsx",
+    "json",
+    "game-development",
+    "config-converter"
+  ],
+  "author": "",
+  "license": "ISC",
+  "pkg": {
+    "assets": [
+      "node_modules/xlsx/**/*",
+      "node_modules/fs-extra/**/*"
+    ],
+    "scripts": [
+      "export-config.js"
+    ]
+  },
+  "build": {
+    "appId": "com.cfgtool.app",
+    "productName": "配置工具",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "icon": "build/icons/win/icon.ico",
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icons/win/icon.ico",
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^24.0.0",
+    "electron-builder": "^26.0.12",
+    "electron-icon-builder": "^2.0.1",
+    "pkg": "^5.8.1"
+  },
+  "dependencies": {
+    "fs-extra": "^11.0.0",
+    "json5": "^2.2.3",
+    "xlsx": "^0.18.5"
+  }
+}

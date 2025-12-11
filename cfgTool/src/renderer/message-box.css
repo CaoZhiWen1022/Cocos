@@ -1,0 +1,177 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #ffffff;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-box-container {
+  display: none; /* 不再需要容器 */
+}
+
+/* 直接把 .message-box 的样式作用于 body 或作为主容器 */
+.message-box {
+  background: white;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: none;
+  border-radius: 0;
+  animation: none;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  min-width: 0;
+  max-height: none;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-30px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.message-content {
+  padding: 20px 24px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.message-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  padding-right: 8px;
+  text-align: left;
+  font-weight: 400;
+  flex: 1;
+}
+
+/* 自定义滚动条 */
+.message-text::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-text::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-text::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.message-text::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.message-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 24px;
+  background: #f5f5f7;
+  border-top: 1px solid #e5e5e5;
+}
+
+.message-buttons.has-cancel {
+  justify-content: space-between;
+}
+
+.message-buttons.has-cancel .btn-secondary {
+  order: 1;
+}
+
+.message-buttons.has-cancel .btn-primary {
+  order: 2;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 90px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-primary {
+  background: #0071e3;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.2);
+}
+
+.btn-primary:hover {
+  background: #0077ed;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 113, 227, 0.2);
+}
+
+.btn-secondary {
+  background: white;
+  color: #1d1d1f;
+  border: 1px solid #d2d2d7;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.btn-secondary:hover {
+  background: #f5f5f7;
+  border-color: #a1a1a6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.hidden {
+  display: none !important;
+}

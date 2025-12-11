@@ -1,0 +1,146 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  line-height: 1.5;
+}
+
+.layout {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1d1d1f;
+}
+
+.header p {
+  font-size: 14px;
+  color: #86868b;
+}
+
+.form-container {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1d1d1f;
+}
+
+.required {
+  color: #ff3b30;
+  margin-left: 4px;
+}
+
+.input-with-button input,
+.form-group input[type="text"] {
+  width: 100%;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: border 0.2s ease;
+  background: white;
+}
+
+.input-with-button input:focus,
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+}
+
+.input-with-button {
+  display: flex;
+  gap: 8px;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-select {
+  background: #f5f5f7;
+  color: #1d1d1f;
+  border: 1px solid #d2d2d7;
+  padding: 10px 16px;
+}
+
+.btn-select:hover {
+  background: #e5e5e7;
+  border-color: #c7c7cc;
+}
+
+.btn-primary {
+  background: #0071e3;
+  color: white;
+  padding: 12px 32px;
+  width: 100%;
+  font-size: 15px;
+}
+
+.btn-primary:hover {
+  background: #0077ed;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+}
+
+.btn-secondary {
+  background: white;
+  color: #1d1d1f;
+  border: 1px solid #d2d2d7;
+  padding: 12px 32px;
+  width: 100%;
+  font-size: 15px;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f7;
+  border-color: #c7c7cc;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.form-actions .btn {
+  flex: 1;
+}

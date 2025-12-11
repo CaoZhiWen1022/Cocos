@@ -1,0 +1,7 @@
+node_modules/electron
+src/
+配置/
+*.md
+.git
+.gitignore
+
