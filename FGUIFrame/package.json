@@ -1,0 +1,23 @@
+{
+  "name": "fgui-frame",
+  "version": "1.0.0",
+  "description": "FGUI Game Framework for Cocos Creator",
+  "main": "dist/GameFrame.js",
+  "types": "dist/GameFrame.d.ts",
+  "scripts": {
+    "build": "npx tsc && npx terser dist/GameFrame.js -c -m --comments false -o dist/GameFrame.tmp.js && move /Y dist\\GameFrame.tmp.js dist\\GameFrame.js",
+    "build:prod": "npx tsc && npx terser dist/GameFrame.js -c -m --comments false --compress drop_console=true --mangle toplevel=true -o dist/GameFrame.tmp.js && move /Y dist\\GameFrame.tmp.js dist\\GameFrame.js",
+    "build:watch": "npx tsc -w"
+  },
+  "devDependencies": {
+    "terser": "^5.44.1",
+    "typescript": "^5.3.2"
+  },
+  "keywords": [
+    "fgui",
+    "cocos-creator",
+    "ui-framework"
+  ],
+  "author": "",
+  "license": "MIT"
+}

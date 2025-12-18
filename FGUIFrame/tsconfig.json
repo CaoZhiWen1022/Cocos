@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "None",
+    "lib": ["ES2017", "DOM"],
+    "declaration": true,
+    "outFile": "./dist/GameFrame.js",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "removeComments": false,
+    "stripInternal": true
+  },
+  "include": [
+    "./global.d.ts",
+    "./UIFrameConfig.ts",
+    "./UIEnum.ts",
+    "./OpenUIParam.ts",
+    "./UIRegister.ts",
+    "./UIBundleMgr.ts",
+    "./UIBase.ts",
+    "./UIPanel.ts",
+    "./UIPopup.ts",
+    "./UIFrame.ts",
+    "./TimerMgr.ts",
+    "./PopupQueueMgr.ts",
+    "./GameFrame.ts",
+    "./UIFullMask.ts",
+    "./GameBundleMgr.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
