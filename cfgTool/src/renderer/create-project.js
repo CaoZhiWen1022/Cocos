@@ -79,6 +79,8 @@ async function handleSubmit(event) {
   const jsonDir = document.getElementById('jsonDir').value.trim();
   const annotationDir = document.getElementById('annotationDir').value.trim();
   const scriptDir = document.getElementById('scriptDir').value.trim();
+  const scriptLanguageInput = document.querySelector('input[name="scriptLanguage"]:checked');
+  const scriptLanguage = scriptLanguageInput ? scriptLanguageInput.value : 'typescript';
 
   if (!projectName) {
     await showMessage('请输入工程名称', 'warning');
@@ -112,6 +114,7 @@ async function handleSubmit(event) {
     annotationDir,
     jsonDir,
     scriptDir,
+    scriptLanguage,
     lastModified: Date.now()
   };
 

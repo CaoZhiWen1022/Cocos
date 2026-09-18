@@ -1,43 +1,44 @@
 let currentProject = null;
 let configStructureRequestId = 0;
+let fieldDefinitionRequestId = 0;
 let activeSheetKey = null;
 let currentSheet = null;
 let tableAnnotation = null;
+let savedAnnotationSnapshot = null;
 let annotationWritable = false;
-let detailMode = 'table';
 let tableAnnotationDirty = false;
 let fieldAnnotationDirty = false;
 
 let tableNameInput;
+let binFileInput;
 let tableTypeRadios = [];
 let tableEmptyState;
 let tableForm;
 let tableDetailSubtitle;
 let tableStatus;
-let saveTableBtn;
-let openFieldBtn;
-let tableDetailView;
-let fieldDetailView;
+let saveBtn;
+let cancelBtn;
 let fieldList;
 let fieldStatus;
 let fieldDetailSubtitle;
-let fieldBackBtn;
-let saveFieldBtn;
 let validateBtn;
 let refreshBtn;
 let exportBtn;
 
 function markTableAnnotationDirty() {
   tableAnnotationDirty = true;
+  updateSaveState();
 }
 
 function markFieldAnnotationDirty() {
   fieldAnnotationDirty = true;
+  updateSaveState();
 }
 
 function resetDirtyFlags() {
   tableAnnotationDirty = false;
   fieldAnnotationDirty = false;
+  updateSaveState();
 }
 
 function hasPendingChanges() {
@@ -46,10 +47,39 @@ function hasPendingChanges() {
 
 function clearTableAnnotationDirty() {
   tableAnnotationDirty = false;
+  updateSaveState();
 }
 
 function clearFieldAnnotationDirty() {
   fieldAnnotationDirty = false;
+  updateSaveState();
+}
+
+function updateSaveState() {
+  if (saveBtn) {
+    saveBtn.disabled = !annotationWritable || !tableAnnotation;
+  }
+  if (cancelBtn) {
+    cancelBtn.classList.toggle('hidden', !hasPendingChanges());
+  }
+}
+
+function cloneAnnotation(annotation) {
+  if (!annotation) {
+    return null;
+  }
+  return {
+    tableName: annotation.tableName || '',
+    tableType: annotation.tableType || '',
+    binFile: annotation.binFile || '',
+    fields: Array.isArray(annotation.fields)
+      ? annotation.fields.map(field => ({ ...field }))
+      : []
+  };
+}
+
+function captureSavedAnnotation() {
+  savedAnnotationSnapshot = cloneAnnotation(tableAnnotation);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -61,19 +91,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function cacheElements() {
   tableNameInput = document.getElementById('tableNameInput');
+  binFileInput = document.getElementById('binFileInput');
   tableEmptyState = document.getElementById('tableEmptyState');
   tableForm = document.getElementById('tableForm');
   tableDetailSubtitle = document.getElementById('tableDetailSubtitle');
   tableStatus = document.getElementById('tableStatus');
-  saveTableBtn = document.getElementById('saveTableBtn');
-  openFieldBtn = document.getElementById('openFieldBtn');
-  tableDetailView = document.getElementById('tableDetailView');
-  fieldDetailView = document.getElementById('fieldDetailView');
+  saveBtn = document.getElementById('saveBtn');
+  cancelBtn = document.getElementById('cancelBtn');
   fieldList = document.getElementById('fieldList');
   fieldStatus = document.getElementById('fieldStatus');
   fieldDetailSubtitle = document.getElementById('fieldDetailSubtitle');
-  fieldBackBtn = document.getElementById('fieldBackBtn');
-  saveFieldBtn = document.getElementById('saveFieldBtn');
   validateBtn = document.getElementById('validateBtn');
   refreshBtn = document.getElementById('refreshBtn');
   exportBtn = document.getElementById('exportBtn');
@@ -98,6 +125,15 @@ function bindEvents() {
     });
   }
 
+  if (binFileInput) {
+    binFileInput.addEventListener('input', () => {
+      if (tableAnnotation) {
+        tableAnnotation.binFile = binFileInput.value.trim();
+        markTableAnnotationDirty();
+      }
+    });
+  }
+
   tableTypeRadios.forEach(radio => {
     radio.addEventListener('change', () => {
       if (!tableAnnotation) {
@@ -106,26 +142,18 @@ function bindEvents() {
       if (radio.checked) {
         tableAnnotation.tableType = radio.value;
         markTableAnnotationDirty();
+        syncFieldValuesIfPossible();
+        refreshFieldAnnotationArea();
       }
     });
   });
 
-  if (saveTableBtn) {
-    saveTableBtn.addEventListener('click', handleSaveTableAnnotation);
+  if (saveBtn) {
+    saveBtn.addEventListener('click', handleSaveAnnotation);
   }
 
-  if (openFieldBtn) {
-    openFieldBtn.addEventListener('click', handleOpenFieldAnnotation);
-  }
-
-  if (fieldBackBtn) {
-    fieldBackBtn.addEventListener('click', () => {
-      setDetailMode('table');
-    });
-  }
-
-  if (saveFieldBtn) {
-    saveFieldBtn.addEventListener('click', handleSaveFieldAnnotation);
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', handleCancelAnnotation);
   }
 
   if (validateBtn) {
@@ -140,7 +168,7 @@ function bindEvents() {
     exportBtn.addEventListener('click', handleExportProject);
   }
 
-    if (fieldList) {
+  if (fieldList) {
     fieldList.addEventListener('change', (event) => {
       if (event.target.classList.contains('field-type-select')) {
         const row = event.target.closest('.field-row');
@@ -209,6 +237,7 @@ function renderProjectInfo() {
   const annotationDirElement = document.getElementById('annotationDir');
   const jsonDirElement = document.getElementById('jsonDir');
   const scriptDirElement = document.getElementById('scriptDir');
+  const scriptLanguageElement = document.getElementById('scriptLanguage');
   const configDirBadge = document.getElementById('configDirBadge');
 
   resetDetailState();
@@ -217,7 +246,7 @@ function renderProjectInfo() {
     if (nameElement) {
       nameElement.textContent = '未选择工程';
     }
-    [configDirElement, annotationDirElement, jsonDirElement, scriptDirElement].forEach(el => {
+    [configDirElement, annotationDirElement, jsonDirElement, scriptDirElement, scriptLanguageElement].forEach(el => {
       setValue(el, null);
     });
     if (configDirBadge) {
@@ -235,6 +264,7 @@ function renderProjectInfo() {
   setValue(annotationDirElement, currentProject.annotationDir);
   setValue(jsonDirElement, currentProject.jsonDir);
   setValue(scriptDirElement, currentProject.scriptDir);
+  setValue(scriptLanguageElement, formatScriptLanguage(currentProject.scriptLanguage));
 
   if (configDirBadge) {
     configDirBadge.textContent = formatPathForBadge(currentProject.configDir);
@@ -247,15 +277,9 @@ function resetDetailState() {
   currentSheet = null;
   activeSheetKey = null;
   tableAnnotation = null;
+  savedAnnotationSnapshot = null;
   annotationWritable = false;
-  detailMode = 'table';
   resetDirtyFlags();
-  if (tableDetailView) {
-    tableDetailView.classList.remove('hidden');
-  }
-  if (fieldDetailView) {
-    fieldDetailView.classList.add('hidden');
-  }
   if (tableEmptyState) {
     tableEmptyState.classList.remove('hidden');
   }
@@ -269,23 +293,10 @@ function resetDetailState() {
     tableStatus.textContent = '';
   }
   if (fieldDetailSubtitle) {
-    fieldDetailSubtitle.textContent = '请选择表类型后打开字段标注';
+    fieldDetailSubtitle.textContent = '请选择表类型后标注字段';
   }
-  if (fieldList) {
-    fieldList.innerHTML = '<div class="detail-empty">暂未加载字段</div>';
-  }
-  if (fieldStatus) {
-    fieldStatus.textContent = '';
-  }
-  if (saveTableBtn) {
-    saveTableBtn.disabled = true;
-  }
-  if (openFieldBtn) {
-    openFieldBtn.disabled = true;
-  }
-  if (saveFieldBtn) {
-    saveFieldBtn.disabled = true;
-  }
+  resetFieldArea('请选择左侧页签以编辑字段标注');
+  updateSaveState();
 }
 
 function setValue(element, value) {
@@ -428,11 +439,15 @@ function activateSheet(key, element) {
 function handleSheetSelection(sheet) {
   currentSheet = sheet;
   tableAnnotation = null;
+  savedAnnotationSnapshot = null;
   annotationWritable = false;
-  setDetailMode('table');
   if (tableDetailSubtitle) {
     tableDetailSubtitle.textContent = `${sheet.fileName} › ${sheet.sheetName}`;
   }
+  if (fieldDetailSubtitle) {
+    fieldDetailSubtitle.textContent = `${sheet.fileName} › ${sheet.sheetName}`;
+  }
+  resetFieldArea('正在准备字段标注...');
   loadSheetAnnotation();
 }
 
@@ -447,8 +462,7 @@ async function loadSheetAnnotation() {
     return;
   }
 
-  openFieldBtn.disabled = true;
-  saveTableBtn.disabled = true;
+  updateSaveState();
   showTableStatus('正在加载标注...');
 
   try {
@@ -461,15 +475,18 @@ async function loadSheetAnnotation() {
 
     if (!result || !result.success) {
       showTableStatus(result?.error || '读取标注失败');
+      resetFieldArea(result?.error || '读取标注失败，无法加载字段');
       return;
     }
 
     tableAnnotation = normalizeAnnotation(result.data, currentSheet.sheetName);
     annotationWritable = result.writable !== false;
+    captureSavedAnnotation();
     updateTableForm();
     resetDirtyFlags();
   } catch (error) {
     showTableStatus(error.message || '读取标注失败');
+    resetFieldArea(error.message || '读取标注失败，无法加载字段');
   }
 }
 
@@ -478,6 +495,7 @@ function normalizeAnnotation(data, fallbackName) {
   return {
     tableName: payload.tableName || fallbackName || '',
     tableType: payload.tableType || '',
+    binFile: payload.binFile || '',
     fields: Array.isArray(payload.fields) ? payload.fields : []
   };
 }
@@ -496,13 +514,16 @@ function updateTableForm() {
     tableNameInput.value = tableAnnotation.tableName || currentSheet.sheetName;
     tableNameInput.disabled = !annotationWritable;
   }
+  if (binFileInput) {
+    binFileInput.value = tableAnnotation.binFile || '';
+    binFileInput.disabled = !annotationWritable;
+  }
   tableTypeRadios.forEach(radio => {
     radio.checked = tableAnnotation.tableType === radio.value;
     radio.disabled = !annotationWritable;
   });
 
-  saveTableBtn.disabled = !annotationWritable;
-  openFieldBtn.disabled = !currentProject?.configDir;
+  updateSaveState();
 
   if (!annotationWritable) {
     showTableStatus('未设置标注目录，无法保存');
@@ -512,25 +533,12 @@ function updateTableForm() {
 
   if (!currentProject?.configDir) {
     showTableStatus('未设置配置目录，无法读取字段');
-    openFieldBtn.disabled = true;
   }
+
+  refreshFieldAnnotationArea();
 }
 
-function setDetailMode(mode) {
-  detailMode = mode;
-  if (!tableDetailView || !fieldDetailView) {
-    return;
-  }
-  if (mode === 'fields') {
-    tableDetailView.classList.add('hidden');
-    fieldDetailView.classList.remove('hidden');
-  } else {
-    tableDetailView.classList.remove('hidden');
-    fieldDetailView.classList.add('hidden');
-  }
-}
-
-async function handleSaveTableAnnotation() {
+async function handleSaveAnnotation() {
   if (!tableAnnotation || !currentSheet) {
     return;
   }
@@ -539,18 +547,43 @@ async function handleSaveTableAnnotation() {
     return;
   }
   tableAnnotation.tableName = (tableNameInput.value || currentSheet.sheetName).trim();
+  tableAnnotation.binFile = (binFileInput?.value || '').trim();
   const tableType = getSelectedTableType();
   if (!tableType) {
     showTableStatus('请选择表类型');
     return;
   }
   tableAnnotation.tableType = tableType;
+
+  const fieldRows = fieldList ? fieldList.querySelectorAll('.field-row') : [];
+  if (fieldRows.length > 0) {
+    const fields = collectFieldValues();
+    if (!fields) {
+      return;
+    }
+    tableAnnotation.fields = fields;
+  }
+
   const result = await persistAnnotation();
   if (result.success) {
-    showTableStatus('表标注已保存');
-    clearTableAnnotationDirty();
+    captureSavedAnnotation();
+    showTableStatus('标注已保存');
+    showFieldStatus('');
+    resetDirtyFlags();
   } else {
     showTableStatus(result.error || '保存失败');
+  }
+}
+
+function handleCancelAnnotation() {
+  if (!savedAnnotationSnapshot || !currentSheet) {
+    return;
+  }
+  tableAnnotation = cloneAnnotation(savedAnnotationSnapshot);
+  updateTableForm();
+  resetDirtyFlags();
+  if (annotationWritable) {
+    showTableStatus('已取消未保存的修改');
   }
 }
 
@@ -559,28 +592,54 @@ function getSelectedTableType() {
   return checked ? checked.value : '';
 }
 
-async function handleOpenFieldAnnotation() {
+function resetFieldArea(message) {
+  fieldDefinitionRequestId += 1;
+  if (fieldList) {
+    fieldList.innerHTML = `<div class="detail-empty">${escapeHtml(message)}</div>`;
+  }
+  showFieldStatus('');
+}
+
+function syncFieldValuesIfPossible() {
+  if (!tableAnnotation || !fieldList) {
+    return false;
+  }
+  const rows = fieldList.querySelectorAll('.field-row');
+  if (!rows.length) {
+    return false;
+  }
+  const fields = collectFieldValues();
+  if (fields) {
+    tableAnnotation.fields = fields;
+    return true;
+  }
+  return false;
+}
+
+function refreshFieldAnnotationArea() {
   if (!tableAnnotation || !currentSheet) {
+    resetFieldArea('请选择左侧页签以编辑字段标注');
     return;
   }
   if (!tableAnnotation.tableType) {
-    showTableStatus('请先选择表类型并保存');
+    resetFieldArea('请选择表类型后标注字段');
     return;
   }
   if (!currentProject || !currentProject.configDir) {
-    showTableStatus('未设置配置目录，无法读取字段');
+    resetFieldArea('未设置配置目录，无法读取字段');
     return;
   }
-  await loadFieldDefinitions();
+  loadFieldDefinitions();
 }
 
 async function loadFieldDefinitions() {
   const api = getElectronAPI();
   if (!api.getSheetFields) {
-    showFieldStatus('当前版本不支持字段标注');
+    resetFieldArea('当前版本不支持字段标注');
     return;
   }
 
+  const requestId = ++fieldDefinitionRequestId;
   fieldList.innerHTML = '<div class="detail-empty">正在解析字段，请稍候...</div>';
   showFieldStatus('');
 
@@ -592,23 +651,30 @@ async function loadFieldDefinitions() {
       tableType: tableAnnotation.tableType
     });
 
+    if (requestId !== fieldDefinitionRequestId) {
+      return;
+    }
+
     if (!result || !result.success) {
-      showFieldStatus(result?.error || '解析字段失败');
+      resetFieldArea(result?.error || '解析字段失败');
       return;
     }
 
     renderFieldRows(result.fields || []);
-    fieldDetailSubtitle.textContent = `${currentSheet.fileName} › ${currentSheet.sheetName}`;
-    saveFieldBtn.disabled = !annotationWritable;
+    if (fieldDetailSubtitle && currentSheet) {
+      fieldDetailSubtitle.textContent = `${currentSheet.fileName} › ${currentSheet.sheetName}`;
+    }
     if (!annotationWritable) {
       showFieldStatus('未设置标注目录，无法保存');
     } else {
       showFieldStatus('');
     }
     clearFieldAnnotationDirty();
-    setDetailMode('fields');
   } catch (error) {
-    showFieldStatus(error.message || '解析字段失败');
+    if (requestId !== fieldDefinitionRequestId) {
+      return;
+    }
+    resetFieldArea(error.message || '解析字段失败');
   }
 }
 
@@ -634,7 +700,7 @@ function renderFieldRows(fieldNames) {
     const maxValue = stored.max ?? '';
     const alias = stored.alias || '';
     const nullable = stored.nullable === true;
-    const isPrimaryKey = alias === 'id';
+    const isPrimaryKey = isListTable && alias === 'id';
     const rangeClass = `field-range${type === 'number' ? '' : ' hidden'}`;
     const nullableTemplate = isListTable
       ? `
@@ -767,28 +833,6 @@ function toggleRangeInputs(row, isNumber) {
   });
 }
 
-async function handleSaveFieldAnnotation() {
-  if (!tableAnnotation || !currentSheet) {
-    return;
-  }
-  if (!annotationWritable) {
-    showFieldStatus('未设置标注目录，无法保存');
-    return;
-  }
-  const fields = collectFieldValues();
-  if (!fields) {
-    return;
-  }
-  tableAnnotation.fields = fields;
-  const result = await persistAnnotation();
-  if (result.success) {
-    showFieldStatus('字段标注已保存');
-    clearFieldAnnotationDirty();
-  } else {
-    showFieldStatus(result.error || '保存失败');
-  }
-}
-
 function collectFieldValues() {
   const rows = Array.from(fieldList.querySelectorAll('.field-row'));
   if (rows.length === 0) {
@@ -889,6 +933,10 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text == null ? '' : String(text);
   return div.innerHTML;
+}
+
+function formatScriptLanguage(scriptLanguage) {
+  return scriptLanguage === 'csharp' ? 'C#（Unity）' : 'TypeScript';
 }
 
 function formatPathForBadge(pathString) {
@@ -1113,7 +1161,8 @@ async function handleExportProject() {
       configDir: currentProject.configDir,
       annotationDir: currentProject.annotationDir,
       jsonDir: currentProject.jsonDir,
-      scriptDir: currentProject.scriptDir
+      scriptDir: currentProject.scriptDir,
+      scriptLanguage: currentProject.scriptLanguage === 'csharp' ? 'csharp' : 'typescript'
     });
 
     if (exportResult && exportResult.success) {

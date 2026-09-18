@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const XLSX = require('xlsx');
 const zlib = require('zlib');
+const { generateScripts } = require('./script-generators');
 
 let launcherWindow;
 let workspaceWindow;
@@ -20,6 +21,27 @@ const projectsFile = path.join(dataDir, 'projects.json');
 
 function sanitizeNameSegment(name = '') {
   return name.replace(/[\\/:*?"<>|]/g, '_');
+}
+
+function normalizeBinFileName(name = '') {
+  let fileName = path.basename(String(name || '').trim());
+  fileName = sanitizeNameSegment(fileName);
+  if (!fileName || fileName === '.' || fileName === '..') {
+    return 'gamedata.bin';
+  }
+  if (!fileName.toLowerCase().endsWith('.bin')) {
+    fileName += '.bin';
+  }
+  return fileName;
+}
+
+async function writeCompressedBin(jsonDir, binFile, data) {
+  const jsonString = JSON.stringify(data);
+  const buffer = Buffer.from(jsonString, 'utf-8');
+  const compressed = zlib.gzipSync(buffer);
+  const binPath = path.join(jsonDir, binFile);
+  await fs.writeFile(binPath, compressed);
+  return binPath;
 }
 
 function isValidVariableName(name) {
@@ -417,6 +439,7 @@ function createLauncherWindow() {
   launcherWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    backgroundColor: '#111318',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -458,6 +481,7 @@ function createWorkspaceWindow(projectData) {
   workspaceWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    backgroundColor: '#111318',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -506,6 +530,7 @@ function openCreateProjectWindow() {
     width: 720,
     height: 820,
     resizable: false,
+    backgroundColor: '#111318',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -551,7 +576,7 @@ function createMessageBoxWindow(parentWindow) {
       preload: path.join(__dirname, '../preload/preload.js')
     },
     show: false,
-    backgroundColor: '#ffffff', // 白色背景
+    backgroundColor: '#1a1d24',
     transparent: false, // 不透明
     center: true,
     useContentSize: true // 宽高指内容区域大小
@@ -836,6 +861,7 @@ ipcMain.handle('load-sheet-annotation', async (_event, payload = {}) => {
   const baseData = {
     tableName: defaultTableName || sheetName || '',
     tableType: '',
+    binFile: '',
     fields: []
   };
 
@@ -1149,7 +1175,7 @@ ipcMain.handle('validate-annotations', async (_event, payload = {}) => {
 
 // IPC 处理：导出工程配置
 ipcMain.handle('export-project', async (_event, payload = {}) => {
-  const { configDir, annotationDir, jsonDir, scriptDir } = payload;
+  const { configDir, annotationDir, jsonDir, scriptDir, scriptLanguage } = payload;
   if (!configDir || !annotationDir || !jsonDir) {
     return { success: false, error: '导出配置缺少必要目录参数' };
   }
@@ -1195,8 +1221,8 @@ ipcMain.handle('export-project', async (_event, payload = {}) => {
       }
     }
 
-    // 2. 执行导出并合并数据
-    const allGameData = {};
+    // 2. 按自定义 bin 文件分组导出
+    const binGroups = new Map();
     const tableNames = []; // 收集所有表名，用于生成枚举
     const tableInterfaces = []; // 收集所有表信息，用于生成接口
 
@@ -1209,7 +1235,7 @@ ipcMain.handle('export-project', async (_event, payload = {}) => {
           continue;
         }
 
-        const { tableName, tableType, fields } = task.annotation;
+        const { tableName, tableType, fields, binFile } = task.annotation;
 
         let exportData = null;
 
@@ -1220,13 +1246,19 @@ ipcMain.handle('export-project', async (_event, payload = {}) => {
         }
 
         if (exportData !== null) {
-          allGameData[tableName] = exportData;
-          // 收集页签名和标注名，用于生成枚举
+          const targetBin = normalizeBinFileName(binFile);
+          if (!binGroups.has(targetBin)) {
+            binGroups.set(targetBin, {});
+          }
+          const groupData = binGroups.get(targetBin);
+          if (Object.prototype.hasOwnProperty.call(groupData, tableName)) {
+            errors.push(`${task.fileName} - ${task.sheetName}: 表名 ${tableName} 在 ${targetBin} 中重复`);
+          }
+          groupData[tableName] = exportData;
           tableNames.push({
             sheetName: task.sheetName,
             tableName: tableName
           });
-          // 收集表信息，用于生成接口
           tableInterfaces.push({
             fileName: task.fileName,
             sheetName: task.sheetName,
@@ -1241,167 +1273,22 @@ ipcMain.handle('export-project', async (_event, payload = {}) => {
     }
 
     // 3. 压缩并写入二进制文件
-    const jsonString = JSON.stringify(allGameData);
-    const buffer = Buffer.from(jsonString, 'utf-8');
-    const compressed = zlib.gzipSync(buffer);
-    const binPath = path.join(jsonDir, 'gamedata.bin');
-    await fs.writeFile(binPath, compressed);
+    if (binGroups.size === 0) {
+      await writeCompressedBin(jsonDir, 'gamedata.bin', {});
+    } else {
+      for (const [binFile, groupData] of binGroups) {
+        await writeCompressedBin(jsonDir, binFile, groupData);
+      }
+    }
 
-    // 4. 生成解压脚本 (如果配置了 scriptDir)
+    // 4. 生成脚本 (如果配置了 scriptDir)
     if (scriptDir) {
-      await fs.ensureDir(scriptDir);
-
-      // 生成配置表枚举
-      // 枚举名：_ + 页签名，枚举值：标注名（tableName）
-      const enumEntries = tableNames.map(({ sheetName, tableName }) => {
-        // 枚举名：_ + 页签名（页签名可能包含中文，需要转换为合法的变量名）
-        // 将中文字符转换为拼音或使用转义，这里简单处理：保留中文字符（TypeScript 支持 Unicode 标识符）
-        const enumName = `_${sheetName}`;
-        return `    ${enumName} = "${tableName}"`;
+      await generateScripts({
+        scriptDir,
+        scriptLanguage,
+        tableNames,
+        tableInterfaces
       });
-
-      const enumContent = enumEntries.length > 0
-        ? `/**
- * 配置表名称枚举
- */
-export enum GameConfigName {
-${enumEntries.join(',\n')}
-}
-`
-        : `/**
- * 配置表名称枚举
- */
-export enum GameConfigName {
-}
-`;
-
-      const scriptContent = `
-import { BufferAsset } from 'cc';
-import * as pako from 'pako';
-
-${enumContent}
-/**
- * 游戏数据管理器
- * 单例模式，需外部加载数据后调用 init 初始化
- * 注意：需要在项目中安装 pako: npm install pako @types/pako
- */
-export class GameConfigMgr {
-    private static _ins: GameConfigMgr | null = null;
-    private _data: any = null;
-
-    private constructor() {}
-
-    public static get ins(): GameConfigMgr {
-        if (!this._ins) {
-            this._ins = new GameConfigMgr();
-        }
-        return this._ins;
-    }
-
-    /**
-     * 初始化数据
-     * @param data 游戏配置数据 (支持 BufferAsset, ArrayBuffer 或已解析的对象)
-     */
-    public init(data: BufferAsset | ArrayBuffer | any) {
-        if (!data) {
-            console.error("GameConfigMgr: init data is null or undefined");
-            return;
-        }
-
-        if (data instanceof BufferAsset) {
-            this._parseBuffer(data.buffer());
-        } else if (data instanceof ArrayBuffer) {
-            this._parseBuffer(data);
-        } else {
-            // 假设是已经解析好的对象
-            this._data = data;
-        }
-    }
-
-    private _parseBuffer(buffer: ArrayBuffer) {
-        const uint8Array = new Uint8Array(buffer);
-        // 使用 pako 解压 gzip 数据
-        const jsonStr = pako.ungzip(uint8Array, { to: 'string' });
-        this._data = JSON.parse(jsonStr);
-    }
-
-    /**
-     * 获取指定表的数据
-     * @param cfgName 表名
-     */
-    public getConfig<T>(cfgName: GameConfigName): T {
-        if (!this._data) {
-            throw new Error("Game data not initialized. Call init() first.");
-        }
-        return this._data[cfgName];
-    }
-
-    /**
-     * 获取指定表的数据
-     * @param cfgName 表名
-     * @param id 主键id
-     */
-    public getConfigById<T>(cfgName: GameConfigName, id: string): T {
-        let cfg = this.getConfig<T[]>(cfgName);
-        if (!cfg) {
-            console.error("配置表"+cfgName+"不存在id:"+id);
-            return null as any;
-        }
-        let cfgItem = cfg.find(item => item['id'] === id);
-        if (!cfgItem) {
-            console.error("配置表"+cfgName+"不存在id:"+id);
-            return null as any;
-        }
-        return cfgItem;
-    }
-
-    /**
-     * 根据模板筛选配置
-     * @param cfgName 表名
-     * @param template 模板对象，包含要匹配的字段值
-     * @returns 匹配的配置项数组
-     */
-    public getConfigByTemplate<T>(cfgName: GameConfigName, template: Partial<T>): T[] {
-        let cfg = this.getConfig<T[]>(cfgName);
-        if (!cfg) {
-            console.error("配置表"+cfgName+"不存在");
-            return [];
-        }
-        
-        if (!Array.isArray(cfg)) {
-            console.error("配置表"+cfgName+"不是列表表，无法使用模板查询");
-            return [];
-        }
-
-        // 筛选符合模板的配置项
-        return cfg.filter(item => {
-            // 检查模板中的每个字段是否匹配
-            for (const key in template) {
-                if (template.hasOwnProperty(key)) {
-                    const templateValue = template[key];
-                    const itemValue = item[key];
-                    
-                    // 如果模板值为 undefined 或 null，跳过该字段
-                    if (templateValue === undefined || templateValue === null) {
-                        continue;
-                    }
-                    
-                    // 严格相等比较
-                    if (itemValue !== templateValue) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        });
-    }
-}
-`;
-      await fs.writeFile(path.join(scriptDir, 'GameConfigMgr.ts'), scriptContent.trim());
-
-      // 5. 生成配置表接口文件
-      const interfaceContent = generateTableInterfaces(tableInterfaces);
-      await fs.writeFile(path.join(scriptDir, 'GameConfigInterfaces.ts'), interfaceContent);
     }
 
     if (errors.length > 0) {
@@ -1524,76 +1411,4 @@ function extractConstantTableData(sheet, fields) {
   return result;
 }
 
-/**
- * 生成配置表接口定义
- * @param tableInterfaces 表信息数组
- */
-function generateTableInterfaces(tableInterfaces) {
-  if (!tableInterfaces || tableInterfaces.length === 0) {
-    return `/**
- * 配置表接口定义
- * 此文件由配置工具自动生成，请勿手动修改
- */
-
-`;
-  }
-
-  const interfaceDefinitions = tableInterfaces.map(table => {
-    const { fileName, sheetName, tableName, tableType, fields } = table;
-
-    // 表注释：文件名 - 页签名
-    const tableComment = `/**
- * ${fileName} - ${sheetName}
- * ${tableType === 'list' ? '列表表' : '常数表'}
- */`;
-
-    if (tableType === 'list') {
-      // 列表表：生成接口，字段使用 alias，类型根据字段类型确定
-      const fieldDefinitions = (fields || []).map(field => {
-        const alias = field.alias || field.name;
-        const fieldName = field.name || '';
-        const fieldType = field.type === 'number' ? 'number' : 'string';
-        const nullable = field.nullable === true;
-        const optional = nullable ? '?' : '';
-
-        // 字段注释：字段名（中文）
-        const fieldComment = fieldName ? `    /** ${fieldName} */` : '';
-        return `${fieldComment}
-    ${alias}${optional}: ${fieldType};`;
-      }).join('\n');
-
-      return `${tableComment}
-export interface ${tableName} {
-${fieldDefinitions}
-}`;
-    } else {
-      // 常数表：生成接口，字段使用 alias，类型根据字段类型确定
-      const fieldDefinitions = (fields || []).map(field => {
-        const alias = field.alias || field.name;
-        const fieldName = field.name || '';
-        const fieldType = field.type === 'number' ? 'number' : 'string';
-        const nullable = field.nullable === true;
-        const optional = nullable ? '?' : '';
-
-        // 字段注释：字段名（中文）
-        const fieldComment = fieldName ? `    /** ${fieldName} */` : '';
-        return `${fieldComment}
-    ${alias}${optional}: ${fieldType};`;
-      }).join('\n');
-
-      return `${tableComment}
-export interface ${tableName} {
-${fieldDefinitions}
-}`;
-    }
-  }).join('\n\n');
-
-  return `/**
- * 配置表接口定义
- * 此文件由配置工具自动生成，请勿手动修改
- */
-
-${interfaceDefinitions}
-`;
-}
 

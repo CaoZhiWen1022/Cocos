@@ -25,24 +25,14 @@
 
     <section class="project-info">
       <div class="info-card">
-        <h2>基础信息</h2>
-        <div class="info-grid">
-          <div>
-            <p class="info-label">配置目录</p>
-            <p id="configDir" class="info-value placeholder">--</p>
-          </div>
-          <div>
-            <p class="info-label">标注目录</p>
-            <p id="annotationDir" class="info-value placeholder">--</p>
-          </div>
-          <div>
-            <p class="info-label">导出 JSON 目录</p>
-            <p id="jsonDir" class="info-value placeholder">--</p>
-          </div>
-          <div>
-            <p class="info-label">脚本目录</p>
-            <p id="scriptDir" class="info-value placeholder">--</p>
-          </div>
+        <div class="info-row info-row-2">
+          <p class="info-item">配置目录：<span id="configDir" class="info-value placeholder">--</span></p>
+          <p class="info-item">标注目录：<span id="annotationDir" class="info-value placeholder">--</span></p>
+        </div>
+        <div class="info-row info-row-3">
+          <p class="info-item">导出 JSON 目录：<span id="jsonDir" class="info-value placeholder">--</span></p>
+          <p class="info-item">脚本目录：<span id="scriptDir" class="info-value placeholder">--</span></p>
+          <p class="info-item">脚本语言：<span id="scriptLanguage" class="info-value placeholder">--</span></p>
         </div>
       </div>
     </section>
@@ -63,15 +53,15 @@
         </aside>
 
         <section class="panel detail-panel">
-          <div id="tableDetailView" class="detail-view">
+          <div id="tableDetailView" class="detail-view table-detail-view">
             <div class="detail-header">
               <div>
                 <h3>表信息标注</h3>
                 <p id="tableDetailSubtitle" class="panel-subtitle">请选择左侧页签进行标注</p>
               </div>
               <div class="detail-actions">
-                <button id="openFieldBtn" class="btn btn-outline" disabled>打开字段标注</button>
-                <button id="saveTableBtn" class="btn btn-primary" disabled>保存</button>
+                <button id="cancelBtn" class="btn btn-ghost hidden">取消修改</button>
+                <button id="saveBtn" class="btn btn-primary" disabled>保存</button>
               </div>
             </div>
             <div id="tableEmptyState" class="detail-empty">请选择左侧页签以编辑表标注</div>
@@ -80,6 +70,10 @@
                 <div class="form-group">
                   <label for="tableNameInput">表名（英文）</label>
                   <input type="text" id="tableNameInput" class="form-input" placeholder="请输入表英文名">
+                </div>
+                <div class="form-group">
+                  <label for="binFileInput">导出 bin 文件</label>
+                  <input type="text" id="binFileInput" class="form-input" placeholder="gamedata.bin">
                 </div>
                 <div class="form-group">
                   <label>表类型</label>
@@ -99,19 +93,15 @@
             </div>
           </div>
 
-          <div id="fieldDetailView" class="detail-view hidden">
+          <div id="fieldDetailView" class="detail-view field-detail-view">
             <div class="detail-header">
               <div>
                 <h3>字段属性标注</h3>
-                <p id="fieldDetailSubtitle" class="panel-subtitle">请选择表类型后打开字段标注</p>
-              </div>
-              <div class="detail-actions">
-                <button id="fieldBackBtn" class="btn btn-ghost">返回表信息</button>
-                <button id="saveFieldBtn" class="btn btn-primary">保存字段标注</button>
+                <p id="fieldDetailSubtitle" class="panel-subtitle">请选择表类型后标注字段</p>
               </div>
             </div>
             <div id="fieldList" class="field-list">
-              <div class="detail-empty">暂未加载字段</div>
+              <div class="detail-empty">请选择左侧页签以编辑字段标注</div>
             </div>
             <div id="fieldStatus" class="detail-status"></div>
           </div>
